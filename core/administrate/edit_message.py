@@ -130,7 +130,6 @@ async def check_data_btn(call: CallbackQuery):
                                  reply_markup=kbi.edit_btn_with_text(call.data.split("_")[-1]))
 
 
-# todo доделать редактирование контактов и соц сетей
 @subrouter.callback_query(F.data == "edit_contact")
 async def check_data_btn(call: CallbackQuery):
     data_mess = database.get_mess("contact")

@@ -69,7 +69,6 @@ def edit_btn_with_text(type_mess: str):
     return keyboard
 
 
-# todo доделать кнопки
 def edit_btn_for_contact():
     buttons = [
         [InlineKeyboardButton(text="🔤 Текст", callback_data=f"edit_text_contact")],

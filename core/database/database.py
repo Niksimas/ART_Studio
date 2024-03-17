@@ -109,14 +109,7 @@ def update_message(data: dict):
                        [data['text'], data['photo_id'], data['link'], data['type_mess']])
 
 
-
-
-
-def get_all_id_user() -> list[int]:
-    """:return: список id всех пользователей"""
+def update_photo_id(type_mess: str, new_photo_id: str):
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute('SELECT * FROM main.all_user')
-        list_id = cursor.fetchall()
-        result = [i[0] for i in list_id]
-    return result
+        cursor.execute(f'UPDATE main.message SET photo_id=$1 WHERE type_message=$2', [new_photo_id, type_mess])
