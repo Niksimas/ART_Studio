@@ -65,6 +65,15 @@ def get_mess(type_mess: str) -> dict:
         return result
 
 
+def get_service(type_mess: str) -> dict:
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'SELECT description, photo_id, amount, name FROM main.service WHERE type=$1', [type_mess])
+        data = cursor.fetchall()[0]
+        result = {"description": data[0], "photo_id": data[1],  "amount": data[2], "name": data[3]}
+        return result
+
+
 def get_user_name(user_id: int) -> str:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
@@ -79,22 +88,6 @@ def set_mess(type_mess: str, text: str, photo_id: str = None, link: str = None) 
                        [text, photo_id, link, type_mess])
 
 
-def save_new_review(data: dict) -> int:
-    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
-        cursor = connect.cursor()
-        cursor.execute('INSERT INTO main.review (name_project, text, name) VALUES(?, ?, ?) RETURNING id;',
-                       [data["name_project"], data["text"], data["name"]])
-        data = cursor.fetchall()
-        return data[0][0]
-
-
-def verification_review(review_id: int) -> None:
-    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
-        cursor = connect.cursor()
-        cursor.execute('UPDATE main.review SET verification=true WHERE id=$1', [review_id])
-
-
-
 def deleted_admin(user_id: int):
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
@@ -107,6 +100,12 @@ def update_message(data: dict):
         cursor = connect.cursor()
         cursor.execute(f'UPDATE main.message SET text=$1, photo_id=$2, link=$3 WHERE type_message=$4',
                        [data['text'], data['photo_id'], data['link'], data['type_mess']])
+
+
+def update_score_user(new_score: int, user_id: int):
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'UPDATE main.all_user SET score=$1 WHERE user_id=$2', [new_score, user_id])
 
 
 def update_photo_id(type_mess: str, new_photo_id: str):

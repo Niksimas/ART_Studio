@@ -3,12 +3,16 @@ import os
 from decouple import config
 from dataclasses import dataclass
 
+
 import gspread
+from gcsa.google_calendar import GoogleCalendar
 from google.oauth2.service_account import Credentials
+
 
 # Путь от корня системы до папки core например:
 # D:\Programing\Flow_Work\core
 home = os.path.dirname(__file__)
+
 
 @dataclass
 class Bots:
@@ -17,9 +21,12 @@ class Bots:
     chat_nil_id: int
     # admin_id_2: int
 
+
 @dataclass
 class Settings:
     bots: Bots
+    link_sheet: str
+    pay_token: str
 
 
 def get_settings():
@@ -28,7 +35,9 @@ def get_settings():
             bot_token=config("token"),
             admin_id=int(config("admin_id")),
             chat_nil_id=int(config("chat_nil_id"))
-        )
+        ),
+        link_sheet=config("sheet"),
+        pay_token=config("pay_token")
     )
 
 
@@ -49,7 +58,10 @@ def set_chat_id(new_chat_id: int):
 
 settings = get_settings()
 
-scope = ['https://www.googleapis.com/auth/spreadsheets']
+scope_sheet = ['https://www.googleapis.com/auth/spreadsheets']
 credentials = Credentials.from_service_account_file(f'{home}/cred.json')
-client = gspread.authorize(credentials.with_scopes(scope))
-sheet = client.open_by_url('https://docs.google.com/spreadsheets/d/1lnam7Vl7DQBTb-8Dna3wRe_w2IUQrECtgf4kSNo-QCM/edit#gid=0')
+
+client_sheet = gspread.authorize(credentials.with_scopes(scope_sheet))
+sheet = client_sheet.open_by_url(config('sheet'))
+
+calendar = GoogleCalendar(config("calendar"), credentials=credentials)

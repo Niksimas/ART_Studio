@@ -170,12 +170,21 @@ async def check_data_btn(call: CallbackQuery):
 @subrouter.callback_query(F.data == "no", EditMess.CheckText)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
     try:
-        msg = await call.message.edit_text(f"Отправьте новый текст сообщения", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте новый текст сообщения \n\n"
+                                           f"Максимальная длина текста:\n"
+                                           f"с картинкой: 1024 символов\n"
+                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin())
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте новый текст сообщения", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте новый текст сообщения \n\n"
+                                           f"Максимальная длина текста:\n"
+                                           f"с картинкой: 1024 символов\n"
+                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin())
         await call.message.delete()
     await state.set_state(EditMess.SetText)
-    await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "text"})
+    if call.data != "no":
+        await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "text"})
+    else:
+        await state.update_data({"del": msg.message_id})
 
 
 @subrouter.message(EditMess.SetText)
@@ -186,6 +195,14 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
     except (KeyError, TelegramBadRequest):
         pass
     data_mess = database.get_mess(data['type_mess'])
+    if len(mess.text) > 4096 and data_mess['photo_id'] is None:
+        msg = await mess.answer(f"Длинна нового текста превышает допустимый предел! Удалите {len(mess.text)-4096}")
+        await state.update_data({"del": msg.message_id})
+        return
+    elif len(mess.text) > 1024 and data_mess['photo_id'] is not None:
+        msg = await mess.answer(f"Длинна нового текста превышает допустимый предел! Удалите {len(mess.text) - 1024}")
+        await state.update_data({"del": msg.message_id})
+        return
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
     await mess.answer(f"{data_mess['text']}\n\nВерно?", reply_markup=kbi.confirmation())
@@ -198,13 +215,20 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(F.data.startswith("edit_photo_"))
 @subrouter.callback_query(F.data == "no", EditMess.CheckPhoto)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data_mess = database.get_mess(call.data.split("_")[-1])
+    if len(data_mess['text']) > 1024:
+        await call.answer(f"Невозможно установить фотографию! Сократите текст на {len(data_mess['text'])-1024} символов!")
+        return
     try:
         msg = await call.message.edit_text(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
     except TelegramBadRequest:
         msg = await call.message.answer(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
         await call.message.delete()
     await state.set_state(EditMess.SetPhoto)
-    await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "photo_id"})
+    if call.data != "no":
+        await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "photo_id"})
+    else:
+        await state.update_data({"del": msg.message_id})
 
 
 @subrouter.message(F.media_group_id, EditMess.SetPhoto)
@@ -252,7 +276,10 @@ async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
         msg = await call.message.answer(f"Отправьте новый текст для кнопки", reply_markup=kbi.cancel_admin())
         await call.message.delete()
     await state.set_state(EditMess.SetTextBtn)
-    await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "text"})
+    if call.data != "no":
+        await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "text"})
+    else:
+        await state.update_data({"del": msg.message_id})
 
 
 @subrouter.message(EditMess.SetTextBtn)
@@ -281,7 +308,10 @@ async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
         msg = await call.message.answer(f"Отправьте новую ссылку для кнопки", reply_markup=kbi.cancel_admin())
         await call.message.delete()
     await state.set_state(EditMess.SetLink)
-    await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "link"})
+    if call.data != "no":
+        await state.update_data({"del": msg.message_id, "type_mess": call.data.split("_")[-1], "type_edit": "link"})
+    else:
+        await state.update_data({"del": msg.message_id})
 
 
 @subrouter.message(EditMess.SetLink)

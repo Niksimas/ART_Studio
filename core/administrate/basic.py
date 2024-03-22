@@ -7,7 +7,7 @@ from aiogram.types import CallbackQuery, Message
 from core.database import database
 from core.keyboard import inline_admin as kbi
 from core.settings import settings, home, set_chat_id
-from core.google_doc.googleSheets import load_user
+from core.google.sheets import load_user
 
 router = Router()
 
@@ -15,7 +15,7 @@ bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
 
 
 @router.callback_query(F.data == "admin")
-@router.callback_query(F.data == "no")
+@router.callback_query(F.data == "no", StateFilter(None))
 async def menu_admins_call(call: CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text("Доступные процессы: ", reply_markup=kbi.admin_menu(call.from_user.id))
@@ -25,7 +25,7 @@ async def menu_admins_call(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.callback_query(F.data == "new_chat")
+@router.callback_query(F.data == "new_chat", StateFilter(None))
 async def manual_new_chat_admin(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("Для того чтобы сменить или настроить чат для администраторов, необходимо:\n"
                                  "1. Создать чат\n"
@@ -43,8 +43,14 @@ async def set_new_chat_admin(mess: Message):
     await mess.answer("Новый чат установлен! Не забудьте добавить в него всех администраторов!")
 
 
+@router.message(Command("new_chat_admins"), F.chat.type == "group")
+async def set_new_chat_admin(mess: Message):
+    await mess.answer("Данный чат не является супергруппой! Включите, а затем выключите в этом чате темы, "
+                      "и повторно отправьте команду /new_chat_admins")
+
+
 # ################################ Добавление удаление администраторов ############################################ #
-@router.callback_query(F.data == "add_admin")
+@router.callback_query(F.data == "add_admin", StateFilter(None))
 async def add_admin(call: CallbackQuery, bot: Bot):
     await call.message.edit_text("Отправьте новому администратору ссылку:\n"
                                  f"https://t.me/{(await bot.me()).username}?start={call.message.message_id}")
@@ -87,5 +93,5 @@ async def del_admin(call: CallbackQuery):
     await call.message.edit_text("Ожидайте загрузки данных!")
     load_user()
     await call.message.edit_text("Данные о пользователях загружены в таблицу:\n"
-                                 "https://docs.google.com/spreadsheets/d/1lnam7Vl7DQBTb-8Dna3wRe_w2IUQrECtgf4kSNo-QCM/edit#gid=0",
+                                 f"{settings.link_sheet}",
                                  reply_markup=kbi.cancel_admin())

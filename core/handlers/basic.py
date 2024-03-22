@@ -53,11 +53,11 @@ async def start_call(call: CallbackQuery, state: FSMContext):
     else:
         try:
             await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                            reply_markup=kb.start(call.message.from_user.id))
+                                            reply_markup=kb.start(call.from_user.id))
         except TelegramBadRequest:
             destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
             msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                  reply_markup=kb.start(call.message.from_user.id))
+                                                  reply_markup=kb.start(call.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
             database.update_photo_id("start", msg.photo[-1].file_id)
@@ -76,8 +76,6 @@ async def address_description_working_hours(call: CallbackQuery, state: FSMConte
         if data_mess["photo_id"] in ["", None]:
             await call.message.answer(data_mess["text"], reply_markup=kb.to_return(call.data, call.from_user.id))
         else:
-            await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                            reply_markup=kb.to_return(call.data, call.from_user.id))
             try:
                 await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
                                                 reply_markup=kb.to_return(call.data, call.from_user.id))
@@ -138,10 +136,10 @@ async def bonuses(call: CallbackQuery, state: FSMContext):
     data_mess = database.get_mess("bonuses")
     try:
         await call.message.edit_text(f"{data_mess['text']}\n\n"
-                                     f"Ваш баланс: {database.get_scope_user(call.from_user.id)}",
+                                     f"Ваш баланс: {database.get_scope_user(call.from_user.id)/100}",
                                      reply_markup=kb.to_return(call.data, call.from_user.id))
     except TelegramBadRequest:
         await call.message.answer(f"{data_mess['text']}\n\n"
-                                  f"Ваш баланс: {database.get_scope_user(call.from_user.id)}",
+                                  f"Ваш баланс: {database.get_scope_user(call.from_user.id)/100}",
                                   reply_markup=kb.to_return(call.data, call.from_user.id))
         await call.message.delete()
