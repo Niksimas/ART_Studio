@@ -26,6 +26,15 @@ def get_all_id_admin() -> list[int]:
     return result
 
 
+def get_all_id_user() -> list[int]:
+    """:return: список id администраторов"""
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute('SELECT user_id FROM main.all_user')
+        list_id = cursor.fetchall()
+    return [i[0] for i in list_id]
+
+
 def get_scope_user(user_id: int) -> int:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
@@ -47,6 +56,14 @@ def get_all_data_user() -> list:
         cursor = connect.cursor()
         cursor.execute('SELECT * FROM main.all_user')
     return cursor.fetchall()
+
+
+def get_all_birthdate_user() -> list:
+    today = dt.date.strftime(dt.date.today(), '%d.%m.%Y')
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute('SELECT user_id FROM main.all_user where birthday=$1', [today])
+    return [i[0] for i in cursor.fetchall()]
 
 
 def save_new_admin(user_id: int, link: str, name:str) -> None:
@@ -112,3 +129,19 @@ def update_photo_id(type_mess: str, new_photo_id: str):
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
         cursor.execute(f'UPDATE main.message SET photo_id=$1 WHERE type_message=$2', [new_photo_id, type_mess])
+
+
+def check_birthday(user_id: int):
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'SELECT birthday FROM main.all_user where user_id = $1', [user_id])
+        data = cursor.fetchall()[0][0]
+        if data is None:
+            return False
+        return True
+
+
+def update_birthday(date: str, user_id: int):
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'UPDATE main.all_user SET birthday=$1 WHERE user_id=$2', [date, user_id])

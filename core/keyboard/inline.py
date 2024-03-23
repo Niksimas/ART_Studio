@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import datetime as dt
 
 from core.database.database import get_all_id_admin
+from core.database.database import get_all_id_admin, check_birthday
 
 
 def start(user_id: int) -> InlineKeyboardMarkup:
@@ -28,6 +29,16 @@ def start(user_id: int) -> InlineKeyboardMarkup:
 def to_return(name_service: str = None, user_id: int = None):
     """call_data: start"""
     buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]]
+    if user_id in (get_all_id_admin()):
+        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_{name_service}")])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def to_bonuses(name_service: str = None, user_id: int = None):
+    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]]
+    if not check_birthday(user_id):
+        buttons.insert(0, [InlineKeyboardButton(text="Установить дату рождения", callback_data="set_birthdate")])
     if user_id in (get_all_id_admin()):
         buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_{name_service}")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)

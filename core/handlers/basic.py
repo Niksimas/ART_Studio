@@ -1,15 +1,17 @@
 import os
+import datetime as dt
 
 from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters.state import State, StatesGroup
 from aiogram.filters import CommandStart, StateFilter
+from aiogram.types import Message, CallbackQuery, FSInputFile
 
-from core.keyboard import inline as kb
+from core.settings import home
+from core.keyboard import inline as kbi
 import core.database.database as database
 from core.administrate.basic import check_code_admin
-from core.settings import home
 
 router = Router()
 
@@ -26,15 +28,15 @@ async def start_mess(message: Message, state: FSMContext):
         pass
     data_mess = database.get_mess("start")
     if data_mess["photo_id"] is None:
-        await message.answer(data_mess["text"], reply_markup=kb.start(message.from_user.id))
+        await message.answer(data_mess["text"], reply_markup=kbi.start(message.from_user.id))
     else:
         try:
             await message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                       reply_markup=kb.start(message.from_user.id))
+                                       reply_markup=kbi.start(message.from_user.id))
         except TelegramBadRequest:
             destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
             msg = await message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                             reply_markup=kb.start(message.from_user.id))
+                                             reply_markup=kbi.start(message.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
             database.update_photo_id("start", msg.photo[-1].file_id)
@@ -49,15 +51,15 @@ async def start_call(call: CallbackQuery, state: FSMContext):
     else:
         data_mess = database.get_mess(call.data)
     if data_mess["photo_id"] is None:
-        await call.message.answer(data_mess["text"], reply_markup=kb.start(call.from_user.id))
+        await call.message.answer(data_mess["text"], reply_markup=kbi.start(call.from_user.id))
     else:
         try:
             await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                            reply_markup=kb.start(call.from_user.id))
+                                            reply_markup=kbi.start(call.from_user.id))
         except TelegramBadRequest:
             destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
             msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                  reply_markup=kb.start(call.from_user.id))
+                                                  reply_markup=kbi.start(call.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
             database.update_photo_id("start", msg.photo[-1].file_id)
@@ -71,18 +73,18 @@ async def address_description_working_hours(call: CallbackQuery, state: FSMConte
     await state.clear()
     data_mess = database.get_mess(call.data)
     try:
-        await call.message.edit_text(data_mess["text"], reply_markup=kb.to_return(call.data, call.from_user.id))
+        await call.message.edit_text(data_mess["text"], reply_markup=kbi.to_return(call.data, call.from_user.id))
     except TelegramBadRequest:
         if data_mess["photo_id"] in ["", None]:
-            await call.message.answer(data_mess["text"], reply_markup=kb.to_return(call.data, call.from_user.id))
+            await call.message.answer(data_mess["text"], reply_markup=kbi.to_return(call.data, call.from_user.id))
         else:
             try:
                 await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                                reply_markup=kb.to_return(call.data, call.from_user.id))
+                                                reply_markup=kbi.to_return(call.data, call.from_user.id))
             except TelegramBadRequest:
                 destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
                 msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                      reply_markup=kb.to_return(call.data, call.from_user.id))
+                                                      reply_markup=kbi.to_return(call.data, call.from_user.id))
                 if os.path.exists(destination):
                     os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
                 database.update_photo_id(call.data, msg.photo[-1].file_id)
@@ -94,18 +96,18 @@ async def contacts(call: CallbackQuery, bot: Bot):
     data_mess = database.get_mess("contact")
     data_btn = database.get_mess("watsapp")
     try:
-        await call.message.edit_text(data_mess["text"], reply_markup=kb.url_btn(data_btn, call.from_user.id))
+        await call.message.edit_text(data_mess["text"], reply_markup=kbi.url_btn(data_btn, call.from_user.id))
     except TelegramBadRequest:
         if data_mess["photo_id"] in ["", None]:
-            await call.message.answer(data_mess["text"], reply_markup=kb.url_btn(data_btn, call.from_user.id))
+            await call.message.answer(data_mess["text"], reply_markup=kbi.url_btn(data_btn, call.from_user.id))
         else:
             try:
                 await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                                reply_markup=kb.url_btn(data_btn, call.from_user.id))
+                                                reply_markup=kbi.url_btn(data_btn, call.from_user.id))
             except TelegramBadRequest:
                 destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
                 msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                      reply_markup=kb.url_btn(data_btn, call.from_user.id))
+                                                      reply_markup=kbi.url_btn(data_btn, call.from_user.id))
                 if os.path.exists(destination):
                     os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
                 database.update_photo_id("contact", msg.photo[-1].file_id)
@@ -121,12 +123,12 @@ async def social_network(call: CallbackQuery):
     data_btn_site = database.get_mess("site")
     try:
         await call.message.edit_text(data_mess["text"],
-                                     reply_markup=kb.social_network_btn(data_btn_vk, data_btn_tg,
-                                                                        data_btn_site, data_btn_inst, call.from_user.id))
+                                     reply_markup=kbi.social_network_btn(data_btn_vk, data_btn_tg,
+                                                                         data_btn_site, data_btn_inst, call.from_user.id))
     except TelegramBadRequest:
         await call.message.answer(data_mess["text"],
-                                  reply_markup=kb.social_network_btn(data_btn_vk, data_btn_tg,
-                                                                     data_btn_site, data_btn_inst, call.from_user.id))
+                                  reply_markup=kbi.social_network_btn(data_btn_vk, data_btn_tg,
+                                                                      data_btn_site, data_btn_inst, call.from_user.id))
         await call.message.delete()
 
 
@@ -137,9 +139,52 @@ async def bonuses(call: CallbackQuery, state: FSMContext):
     try:
         await call.message.edit_text(f"{data_mess['text']}\n\n"
                                      f"Ваш баланс: {database.get_scope_user(call.from_user.id)/100}",
-                                     reply_markup=kb.to_return(call.data, call.from_user.id))
+                                     reply_markup=kbi.to_bonuses(call.data, call.from_user.id))
     except TelegramBadRequest:
         await call.message.answer(f"{data_mess['text']}\n\n"
                                   f"Ваш баланс: {database.get_scope_user(call.from_user.id)/100}",
-                                  reply_markup=kb.to_return(call.data, call.from_user.id))
+                                  reply_markup=kbi.to_bonuses(call.data, call.from_user.id))
         await call.message.delete()
+
+
+########################################################################################################################
+# #################################################################################################################### #
+########################################################################################################################
+class SetBirthdate(StatesGroup):
+    Check = State()
+    Set = State()
+
+
+@router.callback_query(F.data == "set_birthdate")
+@router.callback_query(F.data == "no", SetBirthdate.Check)
+async def bonuses(call: CallbackQuery, state: FSMContext):
+    await state.clear()
+    msg = await call.message.edit_text("Введите дату рождения в формате ДД.ММ.ГГГГ", reply_markup=kbi.to_return())
+    await state.set_state(SetBirthdate.Set)
+    await state.update_data({"del": msg.message_id})
+
+
+@router.message(SetBirthdate.Set)
+async def set_birthdate(mess: Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    try:
+        await bot.edit_message_reply_markup(mess.chat.id, data['del'], reply_markup=None)
+    except (KeyError, TelegramBadRequest):
+        pass
+    try:
+        date = mess.text.split(".")
+        dt.date(int(date[2]), int(date[1]), int(date[0]))
+        await state.update_data({"DR": mess.text[:10]})
+        await mess.answer(f"Дата рождения: {mess.text[:10]}\n\nВерно?", reply_markup=kbi.check_up())
+        await state.set_state(SetBirthdate.Check)
+    except (IndexError, ValueError):
+        msg = await mess.answer("Дата введена неверно! Попробуйте ещё раз!", reply_markup=kbi.to_return())
+        await state.update_data({"del": msg.message_id})
+
+
+@router.callback_query(F.data == "yes", SetBirthdate.Check)
+async def bonuses(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    database.update_birthday(data['DR'], call.from_user.id)
+    await call.message.edit_text("Дата установлена!", reply_markup=kbi.to_return())
+    await state.clear()
