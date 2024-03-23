@@ -215,12 +215,8 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
     await state.set_state(Recording.Amount)
 
 
-# todo возврат 10% от стоимости при оплаты без баллов
-
-
 @subrouter.pre_checkout_query(lambda query: True)
 async def start_not_active(pre_checkout_query: PreCheckoutQuery):
-    # Проверка на доступность товара, возврат True если все супер-пупер
     await pre_checkout_query.answer(ok=True)
 
 
@@ -232,6 +228,8 @@ async def process_successful_payment(mess: Message, state: FSMContext, bot: Bot)
     await mess.answer("Оплата принята! Вы записаны!", reply_markup=kbi.to_return())
     if data['bonuses']:
         db.update_score_user(data["score_user"] - data['available_score'], mess.from_user.id)
+    else:
+        db.update_score_user(data["score_user"] + (data['amount'] * 0.1), mess.from_user.id)
     await state.clear()
     await bot.send_message(get_chat_id(), f"Новая запись!\n"
                                           f"Мероприятие: {data['name']}\n"
