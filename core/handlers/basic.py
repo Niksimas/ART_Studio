@@ -7,6 +7,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters.state import State, StatesGroup
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto
 
 from core.settings import home
 from core.keyboard import inline as kbi
@@ -54,21 +55,25 @@ async def start_call(call: CallbackQuery, state: FSMContext):
         await call.message.answer(data_mess["text"], reply_markup=kbi.start(call.from_user.id))
     else:
         try:
-            await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                            reply_markup=kbi.start(call.from_user.id))
+            await call.message.edit_media(InputMediaPhoto(media=data_mess["photo_id"], caption=data_mess["text"]),
+                                          reply_markup=kbi.start(call.from_user.id))
         except TelegramBadRequest:
-            destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
-            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                  reply_markup=kbi.start(call.from_user.id))
-            if os.path.exists(destination):
-                os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
-            database.update_photo_id("start", msg.photo[-1].file_id)
-    await call.message.delete()
+            try:
+                await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
+                                                reply_markup=kbi.start(call.from_user.id))
+            except TelegramBadRequest:
+                destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
+                msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
+                                                      reply_markup=kbi.start(call.from_user.id))
+                if os.path.exists(destination):
+                    os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+                database.update_photo_id("start", msg.photo[-1].file_id)
+            await call.message.delete()
 
 
 @router.callback_query(F.data == "address")
 @router.callback_query(F.data == "description")
-@router.callback_query(F.data == "working_hours")
+@router.callback_query(F.data == "working-hours")
 async def address_description_working_hours(call: CallbackQuery, state: FSMContext):
     await state.clear()
     data_mess = database.get_mess(call.data)
@@ -77,22 +82,27 @@ async def address_description_working_hours(call: CallbackQuery, state: FSMConte
     except TelegramBadRequest:
         if data_mess["photo_id"] in ["", None]:
             await call.message.answer(data_mess["text"], reply_markup=kbi.to_return(call.data, call.from_user.id))
+            await call.message.delete()
         else:
             try:
-                await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                                reply_markup=kbi.to_return(call.data, call.from_user.id))
+                await call.message.edit_media(InputMediaPhoto(media=data_mess["photo_id"], caption=data_mess["text"]),
+                                              reply_markup=kbi.to_return(call.data, call.from_user.id))
             except TelegramBadRequest:
-                destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
-                msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                                      reply_markup=kbi.to_return(call.data, call.from_user.id))
-                if os.path.exists(destination):
-                    os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
-                database.update_photo_id(call.data, msg.photo[-1].file_id)
-        await call.message.delete()
+                try:
+                    await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
+                                                    reply_markup=kbi.to_return(call.data, call.from_user.id))
+                except TelegramBadRequest:
+                    destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
+                    msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
+                                                          reply_markup=kbi.to_return(call.data, call.from_user.id))
+                    if os.path.exists(destination):
+                        os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+                    database.update_photo_id(call.data, msg.photo[-1].file_id)
+                await call.message.delete()
 
 
 @router.callback_query(F.data == "contacts")
-async def contacts(call: CallbackQuery, bot: Bot):
+async def contacts(call: CallbackQuery):
     data_mess = database.get_mess("contact")
     data_btn = database.get_mess("watsapp")
     try:

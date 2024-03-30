@@ -50,20 +50,20 @@ def custom_btn(text: str, cldata: str):
     return keyboard
 
 
-def edit_btn_with_photo(type_mess: str):
+def edit_btn_with_photo(type_mess: str, callback_data: str = "start"):
     buttons = [
         [InlineKeyboardButton(text="🖼 Фотография", callback_data=f"edit_photo_{type_mess}")],
         [InlineKeyboardButton(text="🔤 Текст", callback_data=f"edit_text_{type_mess}")],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=callback_data)]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
-def edit_btn_with_text(type_mess: str):
+def edit_btn_with_text(type_mess: str, callback_data: str = "start"):
     buttons = [
         [InlineKeyboardButton(text="🔤 Текст", callback_data=f"edit_text_{type_mess}")],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=callback_data)]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
@@ -74,7 +74,7 @@ def edit_btn_for_contact():
         [InlineKeyboardButton(text="🔤 Текст", callback_data=f"edit_text_contact")],
         [InlineKeyboardButton(text="🔤 Текст кнопки", callback_data=f"edit_btn_text_watsapp")],
         [InlineKeyboardButton(text="🔤 Ссылку кнопки", callback_data=f"edit_btn_link_watsapp")],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="contacts")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
@@ -98,7 +98,19 @@ def edit_btn_for_social_network(btn1: str, btn2: str, btn3: str, btn4: str):
             InlineKeyboardButton(text="🔤 Текст 4 кнопки", callback_data=f"edit_btn_text_{btn4}"),
             InlineKeyboardButton(text="🔤 Ссылку 4 кнопки", callback_data=f"edit_btn_link_{btn4}")
         ],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="social_network")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def edit_service(type_mess: str):
+    buttons = [
+        [InlineKeyboardButton(text="🖼 Фотография", callback_data=f"edit_s_photo_{type_mess}")],
+        [InlineKeyboardButton(text="🔤 Название", callback_data=f"edit_s_name_{type_mess}")],
+        [InlineKeyboardButton(text="🔤 Описание", callback_data=f"edit_s_text_{type_mess}")],
+        [InlineKeyboardButton(text="🔤 Стоимость", callback_data=f"edit_s_amount_{type_mess}")],
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="service_" + type_mess)]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard

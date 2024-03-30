@@ -115,19 +115,22 @@ async def check_data_btn(call: CallbackQuery):
     data_mess = database.get_mess(call.data.split("_")[-1])
     try:
         await call.message.edit_text(f"{data_mess['text']}\n\nВыберите что редактируем:",
-                                     reply_markup=kbi.edit_btn_with_photo(call.data.split("_")[-1]))
+                                     reply_markup=kbi.edit_btn_with_photo(call.data.split("_")[-1],
+                                                                          callback_data=call.data.split("_")[-1]))
     except TelegramBadRequest:
         await call.message.edit_media(InputMediaPhoto(media=data_mess["photo_id"],
                                                       caption=f"{data_mess['text']}\n\nВыберите что редактируем:"),
-                                      reply_markup=kbi.edit_btn_with_photo(call.data.split("_")[-1]))
+                                      reply_markup=kbi.edit_btn_with_photo(call.data.split("_")[-1],
+                                                                           callback_data=call.data.split("_")[-1]))
 
 
 @subrouter.callback_query(F.data == "edit_bonuses")
-@subrouter.callback_query(F.data == "edit_working_hours")
+@subrouter.callback_query(F.data == "edit_working-hours")
 async def check_data_btn(call: CallbackQuery):
     data_mess = database.get_mess(call.data.split("_")[-1])
     await call.message.edit_text(f"{data_mess['text']}\n\nВыберите что редактируем:",
-                                 reply_markup=kbi.edit_btn_with_text(call.data.split("_")[-1]))
+                                 reply_markup=kbi.edit_btn_with_text(call.data.split("_")[-1],
+                                                                     callback_data=call.data.split("_")[-1]))
 
 
 @subrouter.callback_query(F.data == "edit_contact")

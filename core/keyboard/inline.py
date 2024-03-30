@@ -3,7 +3,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 import datetime as dt
 
-from core.database.database import get_all_id_admin
 from core.database.database import get_all_id_admin, check_birthday
 
 
@@ -17,7 +16,7 @@ def start(user_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="📱 Контактные данные", callback_data="contacts")],
         [InlineKeyboardButton(text="🌐 Мы в социальных сетях", callback_data="social_network")],
         [InlineKeyboardButton(text="📍 Где мы находимся", callback_data="address")],
-        [InlineKeyboardButton(text="⏳ Часы работы", callback_data="working_hours")],
+        [InlineKeyboardButton(text="⏳ Часы работы", callback_data="working-hours")],
         [InlineKeyboardButton(text="❔ Задать вопрос", callback_data="question")],
     ]
     if user_id in (get_all_id_admin()):
@@ -26,9 +25,9 @@ def start(user_id: int) -> InlineKeyboardMarkup:
     return keyboard
 
 
-def to_return(name_service: str = None, user_id: int = None):
+def to_return(name_service: str = None, user_id: int = None, callback_data: str = "start"):
     """call_data: start"""
-    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]]
+    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data=callback_data)]]
     if user_id in (get_all_id_admin()):
         buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_{name_service}")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -100,17 +99,15 @@ def check_up() -> InlineKeyboardMarkup:
 
 def menu_services():
     buttons = [
-        [InlineKeyboardButton(text="⭕️Уроки по песочной анимации", callback_data="service_")],
-        [InlineKeyboardButton(text="⭕️Мастер-классы по рисованию акрилом", callback_data="service_")],
-        [
-            InlineKeyboardButton(text="⭕️Курс юных леди ", callback_data="service_"),
-            InlineKeyboardButton(text="⭕️Курс юных джентльменов", callback_data="service_")
-        ],
-        [InlineKeyboardButton(text="⭕️Выездные мастер-классы по рисованию", callback_data="service_")],
-        [InlineKeyboardButton(text="⭕️Мастер-классы по пошиву изделий из трикотажа", callback_data="service_")],
-        [InlineKeyboardButton(text="⭕️Мастер-класс по рисованию на спиле дерева", callback_data="service_")],
-        [InlineKeyboardButton(text="Съедобная мастерская", callback_data="service_edible-workshop")],
-        [InlineKeyboardButton(text="⭕️Дни Рождения", callback_data="service_")],
+        [InlineKeyboardButton(text="Песочная анимация", callback_data="service_sand-animation")],
+        [InlineKeyboardButton(text="Живопись в технике набрызг", callback_data="service_painting-spray")],
+        [InlineKeyboardButton(text="⭕Песочная терапия «Сказки на песке»", callback_data="service_")],
+        [InlineKeyboardButton(text="Живопись руками", callback_data="service_hand-painting")],
+        [InlineKeyboardButton(text="Скетчинг", callback_data="service_sketching")],
+        [InlineKeyboardButton(text="⭕Творчество", callback_data="service_")],
+        [InlineKeyboardButton(text="⭕Шашки для детей", callback_data="service_")],
+        [InlineKeyboardButton(text="⭕Логоритмика", callback_data="service_logorhythmics")],
+        [InlineKeyboardButton(text="Развивающие занятия для детей от 1-2-3 лет", callback_data="service_educational-activities")],
         [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")],
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -126,10 +123,10 @@ def state_cancel() -> InlineKeyboardBuilder:
 def menu_service(type_service: str, user_id: int):
     buttons = [
         [InlineKeyboardButton(text="⭕️✍️ Записаться", callback_data=f"registration_{type_service}")],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")],
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")],
     ]
     if user_id in (get_all_id_admin()):
-        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data="edit_social_network")])
+        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_service_{type_service}")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -139,6 +136,15 @@ def custom_btn(text: str, cldata: str):
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+
+def choice_amount(data: list):
+    buttons = []
+    for i in range(len(data)):
+        buttons.append([InlineKeyboardButton(text=data[i]["name_amount"] + ": " + data[i]["amount"],
+                                             callback_data=f"amount_{data[i]['amount']}")])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
 
 ########################################################################################################################
 # ##################################### строим календарик ############################################################ #
