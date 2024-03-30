@@ -5,8 +5,7 @@ from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters.state import State, StatesGroup
-from aiogram.filters import CommandStart, StateFilter
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.filters import CommandStart, StateFilter, Command
 from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto
 
 from core.settings import home
