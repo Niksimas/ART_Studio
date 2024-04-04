@@ -21,7 +21,7 @@ async def viewing_projects(call: CallbackQuery):
 
 @router.callback_query(F.data.startswith("service_"))
 async def viewing_projects(call: CallbackQuery):
-    data = database.get_service(call.data.split("_")[-1])
+    data = database.get_service(int(call.data.split("_")[-1]))
     message = f"{data['name']}\n{data['description']}"
     if data["photo_id"] is not None:
         await call.message.answer_photo(data["photo_id"], caption=message,

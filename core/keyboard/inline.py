@@ -3,7 +3,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 import datetime as dt
 
-from core.database.database import get_all_id_admin, check_birthday
 from core.database.database import get_all_id_admin, check_birthday, get_all_service
 
 
@@ -100,7 +99,7 @@ def check_up(calldata_ret: str = "start") -> InlineKeyboardMarkup:
 
 def menu_services():
     data = get_all_service()
-    buttons = [[InlineKeyboardButton(text=i['name'], callback_data=f"service_{i['type']}")] for i in data]
+    buttons = [[InlineKeyboardButton(text=i['name'], callback_data=f"service_{i['id']}")] for i in data]
     buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
@@ -119,6 +118,7 @@ def menu_service(type_service: str, user_id: int):
     ]
     if user_id in (get_all_id_admin()):
         buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_service_{type_service}")])
+        buttons.append([InlineKeyboardButton(text='⭐️ Удалить', callback_data=f"delserv_{type_service}")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 

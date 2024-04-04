@@ -82,10 +82,10 @@ def get_mess(type_mess: str) -> dict:
         return result
 
 
-def get_service(type_mess: str) -> dict:
+def get_service(type_mess: int) -> dict:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute(f'SELECT description, photo_id, name FROM main.service WHERE type=$1', [type_mess])
+        cursor.execute(f'SELECT description, photo_id, name FROM main.service WHERE id=$1', [type_mess])
         data = cursor.fetchall()[0]
         result = {"description": data[0], "photo_id": data[1], "name": data[2]}
         return result
@@ -122,7 +122,7 @@ def update_message(data: dict):
 def update_service(data: dict):
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute(f'UPDATE main.service SET name=$1, photo_id=$2, description=$3 WHERE type=$4',
+        cursor.execute(f'UPDATE main.service SET name=$1, photo_id=$2, description=$3 WHERE id=$4',
                        [data['name'], data['photo_id'], data['description'], data['type_service']])
 
 
@@ -180,12 +180,21 @@ def update_amount_service(data: dict) -> None:
 def get_all_service() -> list:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute(f'SELECT name, type FROM  main.service')
+        cursor.execute(f'SELECT name, type, id FROM  main.service')
         list_amount = cursor.fetchall()
-        return [{"name": i[0], "type": i[1]} for i in list_amount]
+        return [{"name": i[0], "type": i[1], "id": i[2]} for i in list_amount]
 
 
 def save_new_service(data: dict) -> None:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute('INSERT INTO main.service (user_id, link, data_registr) VALUES(?, ?, ?);', data)
+        cursor.execute('INSERT INTO main.service (type, description, photo_id, name, amount_des) '
+                       'VALUES(?, ?, ?, ?, ?);',
+                       [None, data['description'], data['photo_id'], data['name'], data['amount_des']]
+                       )
+
+
+def deleted_service(service_id: int):
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'DELETE FROM main.service WHERE id=$1', [service_id])
