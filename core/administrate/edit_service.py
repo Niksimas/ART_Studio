@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery, Message, FSInputFile, InputMediaPhoto
 
 from core.settings import home
 from core.database import database
-from core.keyboard import inline_admin as kbi
+from core.keyboard import inline_admin as kbi_a
 from core.handlers import basic as hand_base
 
 
@@ -31,14 +31,14 @@ class EditService(StatesGroup):
 
 @subrouter.callback_query(F.data.startswith("edit_service_"))
 async def check_data_btn(call: CallbackQuery):
-    data_mess = database.get_service(call.data.split("_")[-1])
+    data_mess = database.get_service(int(call.data.split("_")[-1]))
     try:
         await call.message.edit_text(f"{data_mess['description']}",
-                                     reply_markup=kbi.edit_service(call.data.split("_")[-1]))
+                                     reply_markup=kbi_a.edit_service(call.data.split("_")[-1]))
     except TelegramBadRequest:
         await call.message.edit_media(InputMediaPhoto(media=data_mess["photo_id"],
                                                       caption=data_mess['description']),
-                                      reply_markup=kbi.edit_service(call.data.split("_")[-1]))
+                                      reply_markup=kbi_a.edit_service(call.data.split("_")[-1]))
 
 
 # #################################################################################################################### #
@@ -47,10 +47,17 @@ async def check_data_btn(call: CallbackQuery):
 @subrouter.callback_query(F.data.startswith("edit_s_text_"))
 @subrouter.callback_query(F.data == "no", EditService.CheckText)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        calld = data['type_service']
+    else:
+        calld = call.data.split("_")[-1]
     try:
-        msg = await call.message.edit_text(f"Отправьте новый текст сообщения \n\n", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте новый текст сообщения \n\n",
+                                           reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте новый текст сообщения \n\n", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте новый текст сообщения \n\n",
+                                        reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
         await call.message.delete()
     await state.set_state(EditService.SetText)
     if call.data != "no":
@@ -77,7 +84,9 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
         return
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
-    await mess.answer(f"{data_mess['text']}", reply_markup=kbi.confirmation())
+    await mess.answer(f"{data_mess['description']}",
+                      reply_markup=kbi_a.confirmation(txt_y="Сохранить", txt_n="Заново",
+                                                      canc_data=f"service_{data['type_service']}"))
     await state.set_state(EditService.CheckText)
 
 
@@ -87,14 +96,21 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(F.data.startswith("edit_s_photo_"))
 @subrouter.callback_query(F.data == "no", EditService.CheckPhoto)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
-    data_mess = database.get_service(call.data.split("_")[-1])
+    data = await state.get_data()
+    if call.data == "no":
+        calld = data['type_service']
+    else:
+        calld = call.data.split("_")[-1]
+    data_mess = database.get_service(int(call.data.split("_")[-1]))
     if len(data_mess['description']) > 1024:
         await call.answer(f"Невозможно установить фотографию! Сократите текст на {len(data_mess['description'])-1024} символов!")
         return
     try:
-        msg = await call.message.edit_text(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте ОДНУ новую фотографию",
+                                           reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте ОДНУ новую фотографию",
+                                        reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
         await call.message.delete()
     await state.set_state(EditService.SetPhoto)
     if call.data != "no":
@@ -113,7 +129,8 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
     try:
         b = data["group_id"]
     except KeyError:
-        msg = await mess.answer("Можно прикрепить только одну фотографию!", reply_markup=kbi.cancel_admin())
+        msg = await mess.answer("Можно прикрепить только одну фотографию!",
+                                reply_markup=kbi_a.cancel_admin(f"service_{data['type_service']}"))
         await state.update_data({"group_id": mess.media_group_id, "del": msg.message_id})
 
 
@@ -130,9 +147,8 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
     destination = f'{home}/photo/{file_id}.jpg'
     await bot.download_file(file_info.file_path, destination)
     photo = FSInputFile(destination)
-    msg = await mess.answer_photo(photo=photo,
-                                  caption=f"{data_mess['description']}\n\nНовое сообщение выглядит теперь так. Сохраняем?",
-                                  reply_markup=kbi.confirmation())
+    msg = await mess.answer_photo(photo=photo, caption=f"Сохранить?",
+                                  reply_markup=kbi_a.confirmation(canc_data=f"service_{data['type_service']}"))
     if os.path.exists(destination):
         os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
     await state.update_data(data_mess)
@@ -141,15 +157,22 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
 
 
 # #################################################################################################################### #
-# ####################################### РЕДАКТИРОВАНИЕ ФОТОГРАФИИ ################################################## #
+# ####################################### РЕДАКТИРОВАНИЕ НАЗВАНИЯ ################################################## #
 # #################################################################################################################### #
 @subrouter.callback_query(F.data.startswith("edit_s_name_"))
 @subrouter.callback_query(F.data == "no", EditService.CheckName)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        calld = data['type_service']
+    else:
+        calld = call.data.split("_")[-1]
     try:
-        msg = await call.message.edit_text(f"Отправьте новое название", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте новое название",
+                                           reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте новое название", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте новое название",
+                                        reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
         await call.message.delete()
     await state.set_state(EditService.SetName)
     if call.data != "no":
@@ -165,10 +188,10 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
         await bot.edit_message_reply_markup(mess.chat.id, data['del'], reply_markup=None)
     except (KeyError, TelegramBadRequest):
         pass
-    data_mess = database.get_mess(data['type_service'])
+    data_mess = database.get_service(data['type_service'])
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
-    await mess.answer(f"{data_mess['text']}", reply_markup=kbi.confirmation())
+    await mess.answer(f"{data_mess['name']}", reply_markup=kbi_a.confirmation())
     await state.set_state(EditService.CheckName)
 
 
