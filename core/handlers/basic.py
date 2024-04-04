@@ -24,7 +24,7 @@ async def start_mess(message: Message, state: FSMContext):
             await message.answer("Поздравляю, вы стали администратором!")
             database.save_new_admin(message.from_user.id, message.from_user.username, message.from_user.first_name)
             return
-    except:
+    except (TypeError, ValueError):
         pass
     data_mess = database.get_mess("start")
     if data_mess["photo_id"] is None:
@@ -133,7 +133,8 @@ async def social_network(call: CallbackQuery):
     try:
         await call.message.edit_text(data_mess["text"],
                                      reply_markup=kbi.social_network_btn(data_btn_vk, data_btn_tg,
-                                                                         data_btn_site, data_btn_inst, call.from_user.id))
+                                                                         data_btn_site, data_btn_inst,
+                                                                         call.from_user.id))
     except TelegramBadRequest:
         await call.message.answer(data_mess["text"],
                                   reply_markup=kbi.social_network_btn(data_btn_vk, data_btn_tg,
@@ -168,7 +169,8 @@ class SetBirthdate(StatesGroup):
 @router.callback_query(F.data == "no", SetBirthdate.Check)
 async def bonuses(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    msg = await call.message.edit_text("Введите дату рождения в формате ДД.ММ.ГГГГ", reply_markup=kbi.to_return())
+    msg = await call.message.edit_text("Введите дату рождения в формате ДД.ММ.ГГГГ",
+                                       reply_markup=kbi.to_return(callback_data="bonuses"))
     await state.set_state(SetBirthdate.Set)
     await state.update_data({"del": msg.message_id})
 
@@ -184,10 +186,11 @@ async def set_birthdate(mess: Message, state: FSMContext, bot: Bot):
         date = mess.text.split(".")
         dt.date(int(date[2]), int(date[1]), int(date[0]))
         await state.update_data({"DR": mess.text[:10]})
-        await mess.answer(f"Дата рождения: {mess.text[:10]}\n\nВерно?", reply_markup=kbi.check_up())
+        await mess.answer(f"Дата рождения: {mess.text[:10]}\n\nВерно?", reply_markup=kbi.check_up("bonuses"))
         await state.set_state(SetBirthdate.Check)
     except (IndexError, ValueError):
-        msg = await mess.answer("Дата введена неверно! Попробуйте ещё раз!", reply_markup=kbi.to_return())
+        msg = await mess.answer("Дата введена неверно! Попробуйте ещё раз!",
+                                reply_markup=kbi.to_return(callback_data="bonuses"))
         await state.update_data({"del": msg.message_id})
 
 
@@ -195,5 +198,5 @@ async def set_birthdate(mess: Message, state: FSMContext, bot: Bot):
 async def bonuses(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     database.update_birthday(data['DR'], call.from_user.id)
-    await call.message.edit_text("Дата установлена!", reply_markup=kbi.to_return())
+    await call.message.edit_text("Дата установлена!", reply_markup=kbi.to_return(callback_data="bonuses"))
     await state.clear()

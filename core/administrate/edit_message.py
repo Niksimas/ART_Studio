@@ -28,8 +28,8 @@ async def check_start_mess(call: CallbackQuery, state: FSMContext):
         await call.message.edit_text(f"Сейчас сообщение выглядит так:\n\n{data_mess['text']}\n\n"
                                      "Желаете изменить его?", reply_markup=kbi.confirmation())
     else:
-        await call.message.answer_photo(data_mess["photo_id"], caption=data_mess["text"],
-                                        reply_markup=kbi.confirmation())
+        await call.message.answer_photo(data_mess["photo_id"], caption=f"Сейчас сообщение выглядит так:\n\n{data_mess['text']}\n\n"
+                                     "Желаете изменить его?", reply_markup=kbi.confirmation(cd_n="admin", canc_data="start"))
         await call.message.delete()
     await state.set_state(EditStartMess.CheckOldMess)
 
@@ -172,16 +172,21 @@ async def check_data_btn(call: CallbackQuery):
 @subrouter.callback_query(F.data.startswith("edit_text_"))
 @subrouter.callback_query(F.data == "no", EditMess.CheckText)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        mess = data['type_mess']
+    else:
+        mess = call.data.split("_")[-1]
     try:
         msg = await call.message.edit_text(f"Отправьте новый текст сообщения \n\n"
                                            f"Максимальная длина текста:\n"
                                            f"с картинкой: 1024 символов\n"
-                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin())
+                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin(mess))
     except TelegramBadRequest:
         msg = await call.message.answer(f"Отправьте новый текст сообщения \n\n"
                                            f"Максимальная длина текста:\n"
                                            f"с картинкой: 1024 символов\n"
-                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin())
+                                           f"без картинки: 4096 символов", reply_markup=kbi.cancel_admin(mess))
         await call.message.delete()
     await state.set_state(EditMess.SetText)
     if call.data != "no":
@@ -208,7 +213,7 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
         return
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
-    await mess.answer(f"{data_mess['text']}\n\nВерно?", reply_markup=kbi.confirmation())
+    await mess.answer(f"{data_mess['text']}\n\nВерно?", reply_markup=kbi.confirmation(canc_data=data["type_mess"]))
     await state.set_state(EditMess.CheckText)
 
 
@@ -219,13 +224,18 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(F.data == "no", EditMess.CheckPhoto)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
     data_mess = database.get_mess(call.data.split("_")[-1])
+    data = await state.get_data()
+    if call.data == "no":
+        mess = data['type_mess']
+    else:
+        mess = call.data.split("_")[-1]
     if len(data_mess['text']) > 1024:
         await call.answer(f"Невозможно установить фотографию! Сократите текст на {len(data_mess['text'])-1024} символов!")
         return
     try:
-        msg = await call.message.edit_text(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin(mess))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте ОДНУ новую фотографию", reply_markup=kbi.cancel_admin(mess))
         await call.message.delete()
     await state.set_state(EditMess.SetPhoto)
     if call.data != "no":
@@ -244,7 +254,7 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
     try:
         b = data["group_id"]
     except KeyError:
-        msg = await mess.answer("Можно прикрепить только одну фотографию!", reply_markup=kbi.cancel_admin())
+        msg = await mess.answer("Можно прикрепить только одну фотографию!", reply_markup=kbi.cancel_admin(data["type_mess"]))
         await state.update_data({"group_id": mess.media_group_id, "del": msg.message_id})
 
 
@@ -259,7 +269,7 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
     photo = FSInputFile(destination)
     msg = await mess.answer_photo(photo=photo,
                                   caption=f"{data_mess['text']}\n\nНовое сообщение выглядит теперь так. Сохраняем?",
-                                  reply_markup=kbi.confirmation())
+                                  reply_markup=kbi.confirmation(canc_data=data['type_mess']))
     if os.path.exists(destination):
         os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
     await state.update_data(data_mess)
@@ -273,10 +283,15 @@ async def save_photo_front(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(F.data.startswith("edit_btn_text_"))
 @subrouter.callback_query(F.data == "no", EditMess.CheckTextBtn)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        mess = data['type_mess']
+    else:
+        mess = call.data.split("_")[-1]
     try:
-        msg = await call.message.edit_text(f"Отправьте новый текст для кнопки", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте новый текст для кнопки", reply_markup=kbi.cancel_admin(mess))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте новый текст для кнопки", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте новый текст для кнопки", reply_markup=kbi.cancel_admin(mess))
         await call.message.delete()
     await state.set_state(EditMess.SetTextBtn)
     if call.data != "no":
@@ -295,7 +310,7 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
     data_mess = database.get_mess(data['type_mess'])
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
-    await mess.answer(f"{data_mess['text']}\n\nВерно?", reply_markup=kbi.confirmation())
+    await mess.answer(f"{data_mess['text']}\n\nВерно?", reply_markup=kbi.confirmation(canc_data=data['type_mess']))
     await state.set_state(EditMess.CheckTextBtn)
 
 
@@ -305,10 +320,15 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(F.data.startswith("edit_btn_link_"))
 @subrouter.callback_query(F.data == "no", EditMess.CheckLink)
 async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        mess = data['type_mess']
+    else:
+        mess = call.data.split("_")[-1]
     try:
-        msg = await call.message.edit_text(f"Отправьте новую ссылку для кнопки", reply_markup=kbi.cancel_admin())
+        msg = await call.message.edit_text(f"Отправьте новую ссылку для кнопки", reply_markup=kbi.cancel_admin(mess))
     except TelegramBadRequest:
-        msg = await call.message.answer(f"Отправьте новую ссылку для кнопки", reply_markup=kbi.cancel_admin())
+        msg = await call.message.answer(f"Отправьте новую ссылку для кнопки", reply_markup=kbi.cancel_admin(mess))
         await call.message.delete()
     await state.set_state(EditMess.SetLink)
     if call.data != "no":
@@ -327,7 +347,7 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
     data_mess = database.get_mess(data['type_mess'])
     data_mess[data['type_edit']] = mess.html_text
     await state.update_data(data_mess)
-    await mess.answer(f"{data_mess['link']}\n\nВерно?", reply_markup=kbi.confirmation())
+    await mess.answer(f"{data_mess['link']}\n\nВерно?", reply_markup=kbi.confirmation(canc_data=data['type_mess']))
     await state.set_state(EditMess.CheckLink)
 
 

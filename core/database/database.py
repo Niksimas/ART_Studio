@@ -85,9 +85,9 @@ def get_mess(type_mess: str) -> dict:
 def get_service(type_mess: str) -> dict:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute(f'SELECT description, photo_id, amount, name FROM main.service WHERE type=$1', [type_mess])
+        cursor.execute(f'SELECT description, photo_id, name FROM main.service WHERE type=$1', [type_mess])
         data = cursor.fetchall()[0]
-        result = {"description": data[0], "photo_id": data[1],  "amount": data[2], "name": data[3]}
+        result = {"description": data[0], "photo_id": data[1], "name": data[2]}
         return result
 
 
@@ -157,6 +157,35 @@ def update_birthday(date: str, user_id: int) -> None:
 def get_list_amount(type_service: str) -> list:
     with sqlite3.connect(f"{home}/database/main_data.db") as connect:
         cursor = connect.cursor()
-        cursor.execute(f'SELECT name_amount, amount FROM  main.service_amount WHERE type=$2', [type_service])
+        cursor.execute(f'SELECT name_amount, amount, id FROM  main.service_amount WHERE type=$2', [type_service])
         list_amount = cursor.fetchall()
-        return [{"name_amount": i[0], "amount": i[1]} for i in list_amount]
+        return [{"name_amount": i[0], "amount": i[1], "id": i[2]} for i in list_amount]
+
+
+def get_amount_service(id_amount: int) -> dict:
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'SELECT name_amount, amount FROM main.service_amount WHERE id=$1', [id_amount])
+        data = cursor.fetchall()[0]
+        return {"name_amount": data[0], "amount": data[1]}
+
+
+def update_amount_service(data: dict) -> None:
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'UPDATE main.service_amount SET name_amount=$1, amount=$2 WHERE id=$3',
+                       [data['name_amount'], data['amount'], data['id_amount']])
+
+
+def get_all_service() -> list:
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute(f'SELECT name, type FROM  main.service')
+        list_amount = cursor.fetchall()
+        return [{"name": i[0], "type": i[1]} for i in list_amount]
+
+
+def save_new_service(data: dict) -> None:
+    with sqlite3.connect(f"{home}/database/main_data.db") as connect:
+        cursor = connect.cursor()
+        cursor.execute('INSERT INTO main.service (user_id, link, data_registr) VALUES(?, ?, ?);', data)

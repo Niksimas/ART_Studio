@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import datetime as dt
 
 from core.database.database import get_all_id_admin, check_birthday
+from core.database.database import get_all_id_admin, check_birthday, get_all_service
 
 
 def start(user_id: int) -> InlineKeyboardMarkup:
@@ -85,31 +86,22 @@ def question_btn() -> InlineKeyboardMarkup:
     return keyboard
 
 
-def check_up() -> InlineKeyboardMarkup:
+def check_up(calldata_ret: str = "start") -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(text="🟢 Да", callback_data="yes"),
             InlineKeyboardButton(text="🔴 Нет", callback_data="no")
         ],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=calldata_ret)]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
 def menu_services():
-    buttons = [
-        [InlineKeyboardButton(text="Песочная анимация", callback_data="service_sand-animation")],
-        [InlineKeyboardButton(text="Живопись в технике набрызг", callback_data="service_painting-spray")],
-        [InlineKeyboardButton(text="⭕Песочная терапия «Сказки на песке»", callback_data="service_")],
-        [InlineKeyboardButton(text="Живопись руками", callback_data="service_hand-painting")],
-        [InlineKeyboardButton(text="Скетчинг", callback_data="service_sketching")],
-        [InlineKeyboardButton(text="⭕Творчество", callback_data="service_")],
-        [InlineKeyboardButton(text="⭕Шашки для детей", callback_data="service_")],
-        [InlineKeyboardButton(text="⭕Логоритмика", callback_data="service_logorhythmics")],
-        [InlineKeyboardButton(text="Развивающие занятия для детей от 1-2-3 лет", callback_data="service_educational-activities")],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")],
-    ]
+    data = get_all_service()
+    buttons = [[InlineKeyboardButton(text=i['name'], callback_data=f"service_{i['type']}")] for i in data]
+    buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -122,7 +114,7 @@ def state_cancel() -> InlineKeyboardBuilder:
 
 def menu_service(type_service: str, user_id: int):
     buttons = [
-        [InlineKeyboardButton(text="⭕️✍️ Записаться", callback_data=f"registration_{type_service}")],
+        [InlineKeyboardButton(text="✍️ Записаться", callback_data=f"registration_{type_service}")],
         [InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")],
     ]
     if user_id in (get_all_id_admin()):
@@ -140,16 +132,15 @@ def custom_btn(text: str, cldata: str):
 def choice_amount(data: list):
     buttons = []
     for i in range(len(data)):
-        buttons.append([InlineKeyboardButton(text=data[i]["name_amount"] + ": " + data[i]["amount"],
-                                             callback_data=f"amount_{data[i]['amount']}")])
-
+        buttons.append([InlineKeyboardButton(text=data[i]["name_amount"] + ": " + str(data[i]["amount"]),
+                                             callback_data=f"amount_{data[i]['id_amount']}")])
+    buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 ########################################################################################################################
 # ##################################### строим календарик ############################################################ #
 ########################################################################################################################
-
 def creat_list_calendar(in_data: dt.date) -> dict:
     if dt.datetime.now().hour >= 19:
         today = dt.date.today() + dt.timedelta(days=1)

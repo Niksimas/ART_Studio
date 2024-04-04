@@ -98,4 +98,4 @@ async def del_admin(call: CallbackQuery):
     load_user()
     await call.message.edit_text("Данные о пользователях загружены в таблицу:\n"
                                  f"{settings.link_sheet}",
-                                 reply_markup=kbi.cancel_admin())
+                                 reply_markup=kbi.cancel_admin("admin"))

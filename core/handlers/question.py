@@ -2,6 +2,7 @@ from aiogram import Router, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram.filters.state import State, StatesGroup, StateFilter
+from aiogram.exceptions import TelegramBadRequest
 
 from core.settings import get_chat_id
 from core.keyboard import inline as kbi
@@ -18,8 +19,8 @@ class Question(StatesGroup):
 @subrouter.callback_query(F.data == "no", Question.CheckMessage)
 async def set_name_form(call: CallbackQuery, state: FSMContext):
     await call.message.delete()
-    msg = await call.message.answer("Вы можете связаться с нами через указанные контакты. "
-                                    "Или напишите свое обращение, я передам его менеджеру",
+    msg = await call.message.answer("Напишите ваше обращение, я направлю его менеджеру.\n"
+                                    "Или вы можете связаться с нами через указанные контакты.",
                                     reply_markup=kbi.question_btn())
     await state.update_data({"del": msg.message_id})
     await state.set_state(Question.Mess)
@@ -31,7 +32,8 @@ async def set_phone_form(mess: Message, state: FSMContext, bot: Bot):
     try:
         msg_del = (await state.get_data())["del"]
         await bot.edit_message_reply_markup(mess.from_user.id, msg_del, reply_markup=None)
-    except: pass
+    except TelegramBadRequest:
+        pass
     await state.set_data({"text": mess.md_text})
     await mess.answer("Проверьте своё обращение:\n\n"
                       f"{mess.html_text}\n\n"

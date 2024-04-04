@@ -8,6 +8,7 @@ def admin_menu(user_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="👥 Пользователи", callback_data="users")],
         [InlineKeyboardButton(text="💬 Изменить стартовое сообщение", callback_data="edit_start_mess")],
         [InlineKeyboardButton(text="🔁 Сменить чат администраторов", callback_data="new_chat")],
+        [InlineKeyboardButton(text="Добавить услугу", callback_data="add_service")],
     ]
     if user_id == settings.bots.admin_id:
         buttons.append([InlineKeyboardButton(text="Добавить админа", callback_data="add_admin"),
@@ -29,8 +30,8 @@ def confirmation(txt_y: str = "🟢 Да", txt_n: str = "🔴 Нет", cd_y: str
     return keyboard
 
 
-def cancel_admin():
-    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]]
+def cancel_admin(calldata_return: str = "admin"):
+    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data=calldata_return)]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -114,3 +115,12 @@ def edit_service(type_mess: str):
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
+
+
+def choice_amount_id(data: list):
+    buttons = []
+    for i in range(len(data)):
+        buttons.append([InlineKeyboardButton(text=data[i]["name_amount"] + ": " + str(data[i]["amount"]),
+                                             callback_data=f"amount_{data[i]['id']}")])
+    buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
