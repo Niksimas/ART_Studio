@@ -25,7 +25,6 @@ class AddProject(StatesGroup):
     CheckProject = State()
 
 
-# todo подключить модуль создания услуг
 @subrouter.callback_query(F.data == "no", AddProject.CheckProject)
 @subrouter.callback_query(F.data == "add_service")
 async def set_name_project(call: CallbackQuery, state: FSMContext):
