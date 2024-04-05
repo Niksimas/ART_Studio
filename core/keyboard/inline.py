@@ -46,15 +46,15 @@ def to_bonuses(name_service: str = None, user_id: int = None):
 
 def return_service(name_service: str):
     """call_data: start"""
-    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data=name_service)]]
+    buttons = [[InlineKeyboardButton(text="↩️ Вернуться", callback_data="service_" + name_service)]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
-def url_btn(data: dict, user_id: int) -> InlineKeyboardMarkup:
+def url_btn(data: dict, user_id: int, callback_data: str = "start") -> InlineKeyboardMarkup:
     buttons = [
         [InlineKeyboardButton(text=data["text"], url=data["link"])],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=callback_data)]
     ]
     if user_id in (get_all_id_admin()):
         buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data="edit_contact")])
@@ -113,12 +113,25 @@ def state_cancel() -> InlineKeyboardBuilder:
 
 def menu_service(type_service: str, user_id: int):
     buttons = [
-        [InlineKeyboardButton(text="✍️ Записаться", callback_data=f"registration_{type_service}")],
+        [InlineKeyboardButton(text="✍️ Стоимость услуги", callback_data=f"amounts_{type_service}")],
         [InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")],
     ]
     if user_id in (get_all_id_admin()):
-        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_service_{type_service}")])
-        buttons.append([InlineKeyboardButton(text='⭐️ Удалить', callback_data=f"delserv_{type_service}")])
+        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_service_{type_service}"),
+                        InlineKeyboardButton(text='⭐️ Удалить', callback_data=f"delserv_{type_service}")])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def menu_service_send(type_service: str, user_id: int):
+    buttons = [
+        [InlineKeyboardButton(text="✍️ Записаться", callback_data=f"registration_{type_service}")],
+        [InlineKeyboardButton(text="✍️ Стоимость услуги", callback_data=f"amounts_{type_service}")],
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")],
+    ]
+    if user_id in (get_all_id_admin()):
+        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_service_{type_service}"),
+                        InlineKeyboardButton(text='⭐️ Удалить', callback_data=f"delserv_{type_service}")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -133,20 +146,34 @@ def choice_amount(data: list):
     buttons = []
     for i in range(len(data)):
         buttons.append([InlineKeyboardButton(text=data[i]["name_amount"] + ": " + str(data[i]["amount"]),
-                                             callback_data=f"amount_{data[i]['id_amount']}")])
+                                             callback_data=f"amount_{data[i]['id']}")])
     buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="services")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+
+def url_btn_amount(data: dict, user_id: int, type_service: str, callback_data: str = "start") -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text=data["text"], url=data["link"])],
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=callback_data)]
+    ]
+    if user_id in (get_all_id_admin()):
+        buttons.append([InlineKeyboardButton(text='⭐️ Редактировать', callback_data=f"edit_s_amount_{type_service}")])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
 ########################################################################################################################
 # ##################################### строим календарик ############################################################ #
 ########################################################################################################################
-def creat_list_calendar(in_data: dt.date) -> dict:
-    if dt.datetime.now().hour >= 19:
-        today = dt.date.today() + dt.timedelta(days=1)
+def creat_list_calendar(in_data: dt.date, all_day: bool) -> dict:
+    today = dt.date.today()
+    if dt.datetime.now().weekday() in [0, 2, 4]:
+        if dt.datetime.now().hour >= 11:
+            today = dt.date.today() + dt.timedelta(days=1)
     else:
-        today = dt.date.today()
-
+        if dt.datetime.now().hour >= 19:
+            today = dt.date.today() + dt.timedelta(days=1)
     stop_day = today + dt.timedelta(days=32)
     result = {"days": [
                   "-", "-", "-", "-", "-", "-", "-",
@@ -159,13 +186,17 @@ def creat_list_calendar(in_data: dt.date) -> dict:
               "next": "✖️✖️✖️"
               }
     day_start_month = dt.date(in_data.year, in_data.month, 1).weekday()
-    k = 1
+    k = 0
     for i in range(day_start_month, len(result["days"])):
         try:
-            day = dt.date(in_data.year, in_data.month, k)
-            if today <= day and day < stop_day:
-                result["days"][i] = str(k)
+            day = dt.date(in_data.year, in_data.month, k+1)
             k += 1
+            if today <= day and day < stop_day:
+                if not all_day and day.weekday() not in [1, 3]:
+                    continue
+                if all_day and day.weekday() in [5, 6]:
+                    continue
+                result["days"][i] = str(k)
         except ValueError:
             continue
     stop_day = dt.date(stop_day.year, stop_day.month, 1)
@@ -192,8 +223,8 @@ def subtracting_month(input_date: dt.date) -> dt.date:
     return new_data
 
 
-def kalendar(in_data: dt.date) -> InlineKeyboardMarkup:
-    data_fun = creat_list_calendar(in_data)
+def kalendar(in_data: dt.date, all_day: bool, cancel_cd: str = "start") -> InlineKeyboardMarkup:
+    data_fun = creat_list_calendar(in_data, all_day)
     if in_data.month < 10:
         month = f"0{in_data.month}"
     else:
@@ -219,19 +250,27 @@ def kalendar(in_data: dt.date) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=data_fun["days"][i],
                               callback_data=f"setd-{data_fun['days'][i]}-{in_data.month}-{in_data.year}")
          for i in range(28, 35)],
-        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")]
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data=cancel_cd)]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
-def time_record(day: int):
+def time_record(day: int, week_day: int, cancel_cd: str = "start"):
     if day == dt.date.today().day:
         time_now_hour = dt.datetime.now().hour
     else:
         time_now_hour = 0
-    available_time = [f"{i}:00 - {i+1}:00" if i > time_now_hour else "✖️✖️✖️" for i in range(10, 20)]
-    buttons = [[InlineKeyboardButton(text=i, callback_data=f"time_{i}")] for i in available_time]
+    if week_day in [0, 2, 4]:
+        buttons = [[InlineKeyboardButton(text="11:00 - 12:00", callback_data=f"time_11:00 - 12:00")]]
+    else:
+        if time_now_hour != 0:
+            buttons = [[InlineKeyboardButton(text="19:00 - 20:00", callback_data=f"time_19:00 - 20:00")]]
+        else:
+            buttons = [
+                [InlineKeyboardButton(text="14:00 - 15:00", callback_data=f"time_14:00 - 15:00")],
+                [InlineKeyboardButton(text="19:00 - 20:00", callback_data=f"time_19:00 - 20:00")]
+            ]
     buttons.append([InlineKeyboardButton(text="↩️ К датам", callback_data="back_time")])
-    buttons.append([InlineKeyboardButton(text="↩️↩️ Вернуться", callback_data="start")])
+    buttons.append([InlineKeyboardButton(text="↩️↩️ Вернуться", callback_data=cancel_cd)])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

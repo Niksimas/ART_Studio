@@ -19,6 +19,7 @@ subrouter = Router()
 # ####################################### ВЫБОР ПОЛЯ РЕДАКТИРОВАНИЯ ################################################## #
 # #################################################################################################################### #
 class EditService(StatesGroup):
+    ChoiceAmount = State()
     CheckText = State()
     CheckName = State()
     CheckPhoto = State()
@@ -27,6 +28,7 @@ class EditService(StatesGroup):
     SetName = State()
     SetPhoto = State()
     SetAmount = State()
+    SetNameAmount = State()
 
 
 @subrouter.callback_query(F.data.startswith("edit_service_"))
@@ -196,18 +198,57 @@ async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
 
 
 # #################################################################################################################### #
+# ####################################### Редактирование СТОИМОСТЕЙ ################################################## #
+# #################################################################################################################### #
+@subrouter.callback_query(F.data.startswith("edit_s_amount_"))
+@subrouter.callback_query(F.data == "no", EditService.CheckAmount)
+async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if call.data == "no":
+        calld = data['type_service']
+    else:
+        calld = call.data.split("_")[-1]
+    data_mess = database.get_service(int(calld))
+    try:
+        msg = await call.message.edit_text(f"Прайс который установлен сейчас:\n"
+                                           f"{data_mess['amount_des']}\n\nОтправьте новый прайс",
+                                           reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
+    except TelegramBadRequest:
+        msg = await call.message.answer(f"Прайс который установлен сейчас:\n"
+                                           f"Отправьте новый текст сообщения: \n\n{data_mess['amount_des']}",
+                                        reply_markup=kbi_a.cancel_admin(f"service_{calld}"))
+        await call.message.delete()
+    await state.set_state(EditService.SetAmount)
+    if call.data != "no":
+        await state.update_data({"del": msg.message_id, "type_service": call.data.split("_")[-1], "type_edit": "amount_des"})
+    else:
+        await state.update_data({"del": msg.message_id})
+
+
+@subrouter.message(EditService.SetAmount)
+async def set_new_data_btn(mess: Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    try:
+        await bot.edit_message_reply_markup(mess.chat.id, data['del'], reply_markup=None)
+    except (KeyError, TelegramBadRequest):
+        pass
+    data_mess = database.get_service(data['type_service'])
+    data_mess[data['type_edit']] = mess.html_text
+    await state.update_data(data_mess)
+    await mess.answer(f"{data_mess[data['type_edit']]}",
+                      reply_markup=kbi_a.confirmation(txt_y="Сохранить", txt_n="Заново",
+                                                      canc_data=f"service_{data['type_service']}"))
+    await state.set_state(EditService.CheckText)
+
+
+# #################################################################################################################### #
 # ####################################### СОХРАНЕНИЕ ИЗМЕНЕНИЙ ####################################################### #
 # #################################################################################################################### #
 @subrouter.callback_query(F.data == "yes", EditService.CheckName)
+@subrouter.callback_query(F.data == "yes", EditService.CheckAmount)
 @subrouter.callback_query(F.data == "yes", EditService.CheckPhoto)
 @subrouter.callback_query(F.data == "yes", EditService.CheckText)
-async def set_new_data_btn(call: CallbackQuery, state: FSMContext):
+async def set_new_data_service(call: CallbackQuery, state: FSMContext):
     new_data = await state.get_data()
     database.update_service(new_data)
     await hand_base.start_call(call, state)
-
-
-
-
-# todo изменение стоимости/стоимостей услуги
-

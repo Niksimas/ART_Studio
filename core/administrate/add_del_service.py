@@ -119,4 +119,5 @@ async def check_del_service(call: CallbackQuery):
 @subrouter.callback_query(F.data.split("_")[0] == "yesdelserv", StateFilter(None))
 async def del_service(call: CallbackQuery):
     database.deleted_service(int(call.data.split("_")[-1]))
-    await call.message.edit_text("Сервис удален!", reply_markup=kbi.menu_services())
+    await call.message.answer("Сервис удален!", reply_markup=kbi.menu_services())
+    await call.message.delete()

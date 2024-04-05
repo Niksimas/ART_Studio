@@ -18,5 +18,6 @@ def set_event(data: dict):
                     f"Контакт: {data['phone']}\n"
                     f"Дата: {data['date']}\n"
                     f"Время: {data['time']}\n"
+                    f"Тип оплаты: {data['name_amount']}\n"
     )
     cl.add_event(event)
