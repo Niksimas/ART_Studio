@@ -274,3 +274,14 @@ def time_record(day: int, week_day: int, cancel_cd: str = "start"):
     buttons.append([InlineKeyboardButton(text="↩️ К датам", callback_data="back_time")])
     buttons.append([InlineKeyboardButton(text="↩️↩️ Вернуться", callback_data=cancel_cd)])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def return_invoice(name_service: str):
+    """call_data: start"""
+    buttons = [
+        [InlineKeyboardButton(text="Оплатить", pay=True)],
+        [InlineKeyboardButton(text="↩️ Вернуться", callback_data="service_" + name_service)]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+

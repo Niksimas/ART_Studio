@@ -1,3 +1,4 @@
+import asyncio
 import re
 import datetime as dt
 
@@ -118,7 +119,7 @@ async def set_city_form(mess: Message, state: FSMContext, bot: Bot):
 @subrouter.callback_query(Recording.Time, F.data == "back_time")
 async def view_next_month(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    await call.message.answer("Выберите желаемую дату:", reply_markup=kbi.kalendar(dt.date.today(), data['all_day'],
+    await call.message.edit_text("Выберите желаемую дату:", reply_markup=kbi.kalendar(dt.date.today(), data['all_day'],
                                                                                    cancel_cd="service_" + data['service']))
     await state.set_state(Recording.Date)
 
@@ -194,7 +195,7 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
 
 
 @subrouter.callback_query(Recording.CheckMessage, F.data == "yes")
-async def answer_month(call: CallbackQuery, state: FSMContext):
+async def answer_month(call: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
     score_user = db.get_scope_user(call.from_user.id)
     await state.update_data({"score_user": score_user})
@@ -210,10 +211,17 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
             prices=[
                 LabeledPrice(label=data_amount['name_amount'], amount=data_amount["amount"]*100),
                 LabeledPrice(label="Бонусы", amount=0),
-            ]
+            ],
+            reply_markup=kbi.return_invoice(data['service'])
         )
         await state.update_data({"del": msg.message_id})
         await state.set_state(Recording.Amount)
+        try:
+            await asyncio.sleep(900)
+            await bot.delete_message(call.from_user.id, msg.message_id)
+            await state.clear()
+        except TelegramBadRequest:
+            pass
     else:
         available_score = round(data_amount['amount'] * 0.15)
         if available_score > score_user:
@@ -227,7 +235,7 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
 
 
 @subrouter.callback_query(Recording.CheckScore, F.data == "yes")
-async def answer_month(call: CallbackQuery, state: FSMContext):
+async def answer_month(call: CallbackQuery, state: FSMContext, bot: Bot):
     await call.message.delete()
     data = await state.get_data()
     data_amount = db.get_amount_service(data['id_amount'])
@@ -240,14 +248,21 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
         prices=[
             LabeledPrice(label=data_amount['name_amount'], amount=data_amount["amount"]*100),
             LabeledPrice(label="Бонусы", amount=-data["available_score"]),
-        ]
+        ],
+        reply_markup=kbi.return_invoice(data['service'])
     )
     await state.update_data({"del": msg.message_id, "bonuses": True})
     await state.set_state(Recording.Amount)
+    try:
+        await asyncio.sleep(900)
+        await bot.delete_message(call.from_user.id, msg.message_id)
+        await state.clear()
+    except TelegramBadRequest:
+        pass
 
 
 @subrouter.callback_query(Recording.CheckScore, F.data == "no")
-async def answer_month(call: CallbackQuery, state: FSMContext):
+async def answer_month(call: CallbackQuery, state: FSMContext, bot: Bot):
     await call.message.delete()
     data = await state.get_data()
     data_amount = db.get_amount_service(data['id_amount'])
@@ -260,10 +275,17 @@ async def answer_month(call: CallbackQuery, state: FSMContext):
         prices=[
             LabeledPrice(label=data_amount['name_amount'], amount=data_amount["amount"]*100),
             LabeledPrice(label="Бонусы", amount=0),
-        ]
+        ],
+        reply_markup=kbi.return_invoice(data['service'])
     )
     await state.update_data({"del": msg.message_id, "bonuses": False})
     await state.set_state(Recording.Amount)
+    try:
+        await asyncio.sleep(900)
+        await bot.delete_message(call.from_user.id, msg.message_id)
+        await state.clear()
+    except TelegramBadRequest:
+        pass
 
 
 @subrouter.pre_checkout_query(lambda query: True)
