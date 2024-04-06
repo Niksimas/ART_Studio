@@ -80,7 +80,7 @@ async def del_admin_menu(call: CallbackQuery):
 async def check_del_admin(call: CallbackQuery):
     name = database.get_user_name(int(call.data.split('_')[-1]))
     await call.message.edit_text(f"Вы уверены в удалении {name}?",
-                                 reply_markup=kbi.confirmation(cd_y=f"Yes_{call.data.split('_')[-1]}"))
+                                 reply_markup=kbi.confirmation(cd_y=f"yes_{call.data.split('_')[-1]}"))
 
 
 @router.callback_query(F.data.split("_")[0] == "yes", StateFilter(None))
