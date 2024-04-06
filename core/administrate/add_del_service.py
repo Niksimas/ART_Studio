@@ -85,9 +85,9 @@ async def check_new_project(mess: Message, state: FSMContext, bot: Bot):
         if os.path.exists(destination):
             os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
     else:
-        await mess.answer(f"{data['name']}\n{data['description']}")
-        await mess.answer(data['amount_des'], reply_markup=kbi_a.confirmation())
-        await state.update_data({"text": mess.html_text, "photo_id": None})
+        msg = await mess.answer(f"{data['name']}\n{data['description']}")
+        await mess.answer(data['amount_des'], reply_markup=kbi_a.confirmation("Сохранить", "Заполнить заново"))
+        await state.update_data({"text": mess.html_text, "photo_id": None, "del": msg.message_id})
     await state.set_state(AddProject.CheckProject)
 
 
@@ -95,12 +95,12 @@ async def check_new_project(mess: Message, state: FSMContext, bot: Bot):
 async def save_new_project(call: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
     try:
-        await bot.edit_message_reply_markup(call.from_user.id, data['del'], reply_markup=None)
+        await bot.delete_message(call.from_user.id, data['del'])
     except (KeyError, TelegramBadRequest):
         pass
     database.save_new_service(data)
     await state.clear()
-    await call.message.answer("Проект сохранен!", reply_markup=kbi_a.admin_menu(call.from_user.id))
+    await call.message.answer("Услуга сохранена!", reply_markup=kbi_a.admin_menu(call.from_user.id))
     await call.message.delete()
 
 
