@@ -47,7 +47,7 @@ async def registration_in_service(call: CallbackQuery, state: FSMContext):
             except TelegramBadRequest:
                 destination = f'{home}/photo/{data["photo_id"]}.jpg'
                 msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=message,
-                                                 reply_markup=kbi.start(call.from_user.id))
+                                                 reply_markup=kbi.choice_amount(db.get_list_amount()))
                 if os.path.exists(destination):
                     os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
                 db.update_photo_id("start", msg.photo[-1].file_id)
@@ -95,7 +95,7 @@ async def registration_in_service(mess: Message, state: FSMContext):
     except TelegramBadRequest:
         destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
         msg = await mess.answer_photo(photo=FSInputFile(destination), caption=message,
-                                         reply_markup=kbi.start(mess.from_user.id))
+                                      reply_markup=kbi.menu_service_send(data["service"], mess.from_user.id))
         if os.path.exists(destination):
             os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
         db.update_photo_id("start", msg.photo[-1].file_id)
