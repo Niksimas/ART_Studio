@@ -1,10 +1,11 @@
-from aiogram import Router, F, Bot
-from aiogram.fsm.context import FSMContext
+import os
+
+from aiogram import Router, F
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import CallbackQuery, InputMediaPhoto
+from aiogram.types import CallbackQuery, FSInputFile
 
 from core.keyboard import inline as kbi
-from core.settings import settings, home, get_chat_id
+from core.settings import home
 from core.database import database as database
 
 router = Router()
@@ -29,9 +30,18 @@ async def viewing_projects(call: CallbackQuery):
     data = database.get_service(int(call.data.split("_")[-1]))
     message = f"{data['name']}\n{data['description']}"
     if data["photo_id"] is not None:
-        await call.message.answer_photo(data["photo_id"], caption=message,
-                                        reply_markup=kbi.menu_service_send(call.data.split("_")[-1], call.from_user.id))
-        await call.message.delete()
+        try:
+            await call.message.answer_photo(data["photo_id"], caption=message,
+                                            reply_markup=kbi.menu_service_send(call.data.split("_")[-1], call.from_user.id))
+            await call.message.delete()
+        except TelegramBadRequest:
+            destination = f'{home}/photo/{data["photo_id"]}.jpg'
+            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
+                                             reply_markup=kbi.start(message.from_user.id))
+            if os.path.exists(destination):
+                os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+            database.update_photo_id("start", msg.photo[-1].file_id)
+
     else:
         try:
             await call.message.edit_text(message,

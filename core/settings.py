@@ -41,11 +41,6 @@ def get_settings():
     )
 
 
-def get_admin_id():
-    from core.database.database import get_all_id_admin
-    return get_all_id_admin()
-
-
 def get_chat_id():
     with open(f"{home}/chat_id.txt", "r") as f:
         return int(f.read())
@@ -57,6 +52,9 @@ def set_chat_id(new_chat_id: int):
 
 
 settings = get_settings()
+
+
+
 
 scope_sheet = ['https://www.googleapis.com/auth/spreadsheets']
 credentials = Credentials.from_service_account_file(f'{home}/cred.json')

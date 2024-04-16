@@ -43,11 +43,6 @@ async def start_mess(message: Message, state: FSMContext):
     database.save_new_user(message.from_user.id, message.from_user.username)
 
 
-# @router.message(Command("test"), StateFilter(None))
-# async def test(message: Message):
-#     await message.answer(";;;;;", reply_markup=kbi.creat_list_calendar())
-#
-
 @router.callback_query(F.data == "start")
 async def start_call(call: CallbackQuery, state: FSMContext):
     await state.clear()
