@@ -43,14 +43,14 @@ async def registration_in_service(call: CallbackQuery, state: FSMContext):
             try:
                 await call.message.answer_photo(data["photo_id"], caption=message,
                                                 reply_markup=kbi.choice_amount(db.get_list_amount()))
-                await call.message.delete()
             except TelegramBadRequest:
                 destination = f'{home}/photo/{data["photo_id"]}.jpg'
                 msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=message,
-                                                 reply_markup=kbi.choice_amount(db.get_list_amount()))
+                                                      reply_markup=kbi.choice_amount(db.get_list_amount()))
                 if os.path.exists(destination):
                     os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
                 db.update_photo_id("start", msg.photo[-1].file_id)
+            await call.message.delete()
         else:
             try:
                 await call.message.edit_text(message, reply_markup=kbi.choice_amount(db.get_list_amount()))

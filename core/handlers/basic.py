@@ -52,6 +52,7 @@ async def start_call(call: CallbackQuery, state: FSMContext):
         data_mess = database.get_mess(call.data)
     if data_mess["photo_id"] is None:
         await call.message.answer(data_mess["text"], reply_markup=kbi.start(call.from_user.id))
+        await call.message.delete()
     else:
         try:
             await call.message.edit_media(InputMediaPhoto(media=data_mess["photo_id"], caption=data_mess["text"]),

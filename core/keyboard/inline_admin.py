@@ -40,7 +40,7 @@ def del_admin(admins: dict):
     buttons = []
     for i in admins.keys():
         buttons.append([InlineKeyboardButton(text=admins[i], callback_data=f"del_{i}")])
-    buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="start")])
+    buttons.append([InlineKeyboardButton(text="↩️ Вернуться", callback_data="admin")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
