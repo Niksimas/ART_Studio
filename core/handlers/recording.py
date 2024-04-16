@@ -1,18 +1,19 @@
 import asyncio
-import re
 import datetime as dt
+import os
+import re
 
 from aiogram import Router, F, Bot
-from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message, LabeledPrice, ReplyKeyboardRemove, PreCheckoutQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message, FSInputFile, LabeledPrice, ReplyKeyboardRemove, PreCheckoutQuery
 
-from core.keyboard import reply as kbr
-from core.keyboard import inline as kbi
 from core.database import database as db
 from core.google.calendar_my import set_event
-from core.settings import get_chat_id, settings
+from core.keyboard import inline as kbi
+from core.keyboard import reply as kbr
+from core.settings import get_chat_id, settings, home
 
 subrouter = Router()
 
@@ -39,16 +40,24 @@ async def registration_in_service(call: CallbackQuery, state: FSMContext):
         data = db.get_service((await state.get_data())["service"])
         message = f"{data['name']}\n{data['description']}"
         if data["photo_id"] is not None:
-            await call.message.answer_photo(data["photo_id"], caption=message,
-                                            reply_markup=kbi.choice_amount(db.get_list_amount()))
-            await call.message.delete()
+            try:
+                await call.message.answer_photo(data["photo_id"], caption=message,
+                                                reply_markup=kbi.choice_amount(db.get_list_amount()))
+                await call.message.delete()
+            except TelegramBadRequest:
+                destination = f'{home}/photo/{data["photo_id"]}.jpg'
+                msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data['text'],
+                                                 reply_markup=kbi.start(call.from_user.id))
+                if os.path.exists(destination):
+                    os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+                db.update_photo_id("start", msg.photo[-1].file_id)
         else:
             try:
                 await call.message.edit_text(message, reply_markup=kbi.choice_amount(db.get_list_amount()))
             except TelegramBadRequest:
                 await call.message.answer(message, reply_markup=kbi.choice_amount(db.get_list_amount()))
                 await call.message.delete()
-
+""
 
 @subrouter.callback_query(F.data.startswith("amount_"), Recording.Amount)
 async def registration_in_service(call: CallbackQuery, state: FSMContext):
@@ -80,8 +89,16 @@ async def registration_in_service(mess: Message, state: FSMContext):
     data_mess = db.get_service(data["service"])
     message = f"{data_mess['name']}\n{data_mess['description']}"
     await mess.answer("Ожидание снято!", reply_markup=ReplyKeyboardRemove())
-    await mess.answer_photo(data_mess["photo_id"], caption=message,
-                            reply_markup=kbi.menu_service_send(data["service"], mess.from_user.id))
+    try:
+        await mess.answer_photo(data_mess["photo_id"], caption=message,
+                                reply_markup=kbi.menu_service_send(data["service"], mess.from_user.id))
+    except TelegramBadRequest:
+        destination = f'{home}/photo/{data_mess["photo_id"]}.jpg'
+        msg = await mess.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
+                                         reply_markup=kbi.start(mess.from_user.id))
+        if os.path.exists(destination):
+            os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+        db.update_photo_id("start", msg.photo[-1].file_id)
 
 
 @subrouter.message(Recording.Phone)

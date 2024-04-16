@@ -36,8 +36,8 @@ async def viewing_projects(call: CallbackQuery):
             await call.message.delete()
         except TelegramBadRequest:
             destination = f'{home}/photo/{data["photo_id"]}.jpg'
-            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data_mess['text'],
-                                             reply_markup=kbi.start(message.from_user.id))
+            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data['text'],
+                                             reply_markup=kbi.start(call.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
             database.update_photo_id("start", msg.photo[-1].file_id)
@@ -58,9 +58,17 @@ async def viewing_projects(call: CallbackQuery):
     data = database.get_service(int(call.data.split("_")[-1]))
     message = f"{data['name']}\n{data['description']}"
     if data["photo_id"] is not None:
-        await call.message.answer_photo(data["photo_id"], caption=message,
-                                        reply_markup=kbi.menu_service(call.data.split("_")[-1], call.from_user.id))
-        await call.message.delete()
+        try:
+            await call.message.answer_photo(data["photo_id"], caption=message,
+                                            reply_markup=kbi.menu_service(call.data.split("_")[-1], call.from_user.id))
+            await call.message.delete()
+        except TelegramBadRequest:
+            destination = f'{home}/photo/{data["photo_id"]}.jpg'
+            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data['text'],
+                                             reply_markup=kbi.start(call.from_user.id))
+            if os.path.exists(destination):
+                os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
+            database.update_photo_id("start", msg.photo[-1].file_id)
     else:
         try:
             await call.message.edit_text(message, reply_markup=kbi.menu_service(call.data.split("_")[-1], call.from_user.id))
