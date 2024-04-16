@@ -36,7 +36,7 @@ async def viewing_projects(call: CallbackQuery):
             await call.message.delete()
         except TelegramBadRequest:
             destination = f'{home}/photo/{data["photo_id"]}.jpg'
-            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data['text'],
+            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=message,
                                              reply_markup=kbi.start(call.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
@@ -64,7 +64,7 @@ async def viewing_projects(call: CallbackQuery):
             await call.message.delete()
         except TelegramBadRequest:
             destination = f'{home}/photo/{data["photo_id"]}.jpg'
-            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=data['text'],
+            msg = await call.message.answer_photo(photo=FSInputFile(destination), caption=message,
                                              reply_markup=kbi.start(call.from_user.id))
             if os.path.exists(destination):
                 os.rename(destination, f"{home}/photo/{msg.photo[-1].file_id}.jpg")
